@@ -1,13 +1,13 @@
-# AQUAPOLIS: The Abyssal Metropolis (Tiếng Việt)
+# AQUAPOLIS: The Abyssal Metropolis (Edition 2)
 
-Mô hình 3D tương tác của **Aquapolis**, thành phố dưới biển, phiên bản tiếng Việt.
+Interactive 3D model of **Aquapolis**, an undersea city built for an English project.
 
-**Xem 3D:** https://ledat0505.github.io/aquapolis-3d-vn/ (kéo để xoay, cuộn hoặc chụm hai ngón để phóng to, chạm vào công trình để xem công dụng).
+**View it in 3D:** https://ledat0505.github.io/aquapolis-3d-vn/ (drag to rotate, scroll or pinch to zoom, tap a building to see its purpose and features).
 
-`aquapolis.json` chứa 858 vật thể của thành phố (mô hình, vị trí, góc xoay, kích thước và mô tả bằng tiếng Việt).
+`aquapolis.json` lists the 858 objects of this edition (model, position, rotation, scale and a full English description): the glass dome and pressure ring, Aquapolis towers with rooftop gardens, the elevated maglev and undersea metro, tidal turbines, the desalination plant, kelp farms, coral reefs and a shipwreck dive site, and the floating port at the surface.
 
-Bản tiếng Anh: https://ledat0505.github.io/aquapolis-3d/
+First edition: https://ledat0505.github.io/aquapolis-3d/
 
-**Nhóm thực hiện:** Bảo Ngọc, Phương Lan, Khánh Uyên, Quỳnh Anh, Lam Giang
+**Team:** Bảo Ngọc, Phương Lan, Khánh Uyên, Quỳnh Anh, Lam Giang
 
-Mô hình 3D: bộ tài nguyên [Kenney](https://kenney.nl) (giấy phép CC0).
+3D models: [Kenney](https://kenney.nl) game asset kits (CC0 license).
