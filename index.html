@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Aquapolis 3D (Tiếng Việt)</title>
+<meta name="description" content="Aquapolis: The Abyssal Metropolis, thành phố dưới biển khám phá bằng 3D.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0A0F1E;
+    --panel: rgba(10, 15, 30, 0.72);
+    --pearl: #F4F1EA;
+    --cyan: #00E5FF;
+    --aether: #3FA9F5;
+    --muted: #9fb3c8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--navy); color: var(--pearl); font-family: "Exo 2", system-ui, sans-serif; }
+  #scene { position: fixed; inset: 0; }
+  canvas { display: block; touch-action: none; }
+
+  .hud { position: fixed; pointer-events: none; z-index: 2; text-shadow: 0 1px 3px rgba(5, 10, 25, .85), 0 0 12px rgba(5, 10, 25, .6); }
+  .shade { position: fixed; left: 0; right: 0; height: 160px; pointer-events: none; z-index: 1; }
+  .shade.top { top: 0; background: linear-gradient(rgba(10, 15, 30, .7), transparent); }
+  .shade.bottom { bottom: 0; background: linear-gradient(transparent, rgba(10, 15, 30, .75)); }
+  .brand { top: 16px; left: 16px; }
+  .brand .tag { font-size: 11px; letter-spacing: .3em; color: var(--cyan); }
+  .brand h1 { margin: 4px 0 0; font-weight: 300; font-size: clamp(28px, 6vw, 48px); letter-spacing: .18em; line-height: 1; text-shadow: 0 0 18px rgba(0, 229, 255, .45); }
+  .brand p { margin: 6px 0 0; font-size: clamp(12px, 2.6vw, 15px); color: var(--aether); letter-spacing: .08em; }
+
+  .credit { bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+  .credit b { color: var(--pearl); font-weight: 500; }
+  .hint { text-align: right; }
+
+  .card {
+    position: fixed; z-index: 3; right: 16px; top: 16px; width: min(320px, calc(100vw - 32px));
+    background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 229, 255, .35); border-radius: 10px; padding: 14px 16px;
+    box-shadow: 0 0 24px rgba(0, 229, 255, .15); display: none;
+  }
+  .card.show { display: block; }
+  .card .label { font-size: 10px; letter-spacing: .3em; color: var(--cyan); }
+  .card h2 { margin: 4px 0 8px; font-size: 18px; font-weight: 500; }
+  .card dl { margin: 0; font-size: 13px; line-height: 1.45; }
+  .card dt { color: var(--aether); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-top: 6px; }
+  .card dd { margin: 0; }
+  .card button { position: absolute; top: 8px; right: 10px; background: none; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; }
+
+  .loader { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: var(--navy); transition: opacity .6s; }
+  .loader.done { opacity: 0; pointer-events: none; }
+  .loader .box { width: min(280px, 80vw); text-align: center; }
+  .loader .title { letter-spacing: .3em; font-weight: 300; font-size: 22px; }
+  .bar { margin-top: 14px; height: 2px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); transition: width .2s; }
+  .loader small { display: block; margin-top: 8px; color: var(--muted); font-size: 11px; letter-spacing: .15em; }
+
+  @media (max-width: 600px) {
+    .card { top: auto; bottom: 56px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<div class="shade top"></div>
+<div class="shade bottom"></div>
+
+<div class="hud brand">
+  <div class="tag">ĐỘ SÂU 00 / ĐÁY BIỂN</div>
+  <h1>AQUAPOLIS</h1>
+  <p>The Abyssal Metropolis</p>
+</div>
+
+<div class="hud credit">
+  <div><b>Nhóm thực hiện</b><br>Bảo Ngọc · Phương Lan · Khánh Uyên · Quỳnh Anh · Lam Giang</div>
+  <div class="hint">Kéo để xoay · Cuộn để phóng to<br>Chạm vào công trình để xem thông tin</div>
+</div>
+
+<div class="card" id="card">
+  <button id="close" aria-label="Đóng">×</button>
+  <div class="label">CÔNG TRÌNH</div>
+  <h2 id="c-name"></h2>
+  <dl>
+    <dt>Công dụng</dt><dd id="c-purpose"></dd>
+    <dt>Đặc điểm</dt><dd id="c-feature"></dd>
+  </dl>
+</div>
+
+<div class="loader" id="loader">
+  <div class="box">
+    <div class="title">AQUAPOLIS</div>
+    <div class="bar"><i id="bar"></i></div>
+    <small id="status">ĐANG KHỞI TẠO THÀNH PHỐ…</small>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const container = document.getElementById('scene');
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b5c7a, 60, 190);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.5, 1000);
+camera.position.set(72, 34, 72);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 8, 0);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.6;
+controls.minDistance = 10;
+controls.maxDistance = 170;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+// Lighting
+scene.add(new THREE.AmbientLight(0xbfe9ff, 1.0));
+scene.add(new THREE.HemisphereLight(0xa8ecff, 0x1d3b4a, 1.0));
+const sun = new THREE.DirectionalLight(0xe6fbff, 1.5);
+sun.position.set(30, 60, 20);
+scene.add(sun);
+
+// Ocean backdrop: sunlit surface overhead fading to the dark deep
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(500, 32, 16),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color(0x4fd1e8) }, mid: { value: new THREE.Color(0x0e6d8f) }, low: { value: new THREE.Color(0x03202e) } },
+    vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 low; varying vec3 vP; void main(){ float h = vP.y; vec3 c = h > 0.0 ? mix(mid, top, pow(h, 0.8)) : mix(mid, low, min(-h * 2.5, 1.0)); gl_FragColor = vec4(c, 1.0); }'
+  })
+);
+scene.add(sky);
+
+// Sandy seabed reaching past the city
+const seabed = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshLambertMaterial({ color: 0xc9b98f }));
+seabed.rotation.x = -Math.PI / 2;
+seabed.position.y = -0.25;
+scene.add(seabed);
+
+// Rippling water surface at the height of the floating port
+const surface = new THREE.Mesh(
+  new THREE.PlaneGeometry(400, 400, 80, 80),
+  new THREE.MeshPhongMaterial({ color: 0x46c6e0, transparent: true, opacity: 0.45, side: THREE.DoubleSide, shininess: 80, depthWrite: false })
+);
+surface.rotation.x = -Math.PI / 2;
+surface.position.y = 25.9;
+scene.add(surface);
+const ripple = surface.geometry.attributes.position;
+const rippleBase = Float32Array.from(ripple.array);
+
+// Bubbles drifting up through the water
+const bubbleCount = 400;
+const bubbleGeo = new THREE.BufferGeometry();
+const bubblePos = new Float32Array(bubbleCount * 3);
+for (let i = 0; i < bubbleCount; i++) {
+  bubblePos[i * 3] = (Math.random() - 0.5) * 160;
+  bubblePos[i * 3 + 1] = Math.random() * 26;
+  bubblePos[i * 3 + 2] = (Math.random() - 0.5) * 160;
+}
+bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePos, 3));
+const bubbles = new THREE.Points(bubbleGeo, new THREE.PointsMaterial({ color: 0xe8fbff, size: 0.35, transparent: true, opacity: 0.7, depthWrite: false }));
+scene.add(bubbles);
+
+// Glow around the Aquapolis Core
+const coreLight = new THREE.PointLight(0x00e5ff, 60, 40, 1.6);
+coreLight.position.set(-4, 14, -4);
+scene.add(coreLight);
+
+// Re-centre a model on X/Z and sit it on its base, and soften metal that renders black without an environment map
+function prepareModel(model) {
+  model.traverse(child => {
+    if (!child.isMesh) return;
+    for (const mat of [].concat(child.material)) {
+      if (mat.metalness > 0.3) { mat.metalness = 0.1; mat.roughness = Math.max(mat.roughness || 0.5, 0.6); }
+    }
+  });
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model);
+  if (box.isEmpty()) return;
+  const c = box.getCenter(new THREE.Vector3());
+  const offset = new THREE.Vector3(c.x, box.min.y, c.z);
+  if (offset.lengthSq() > 0.001) model.children.forEach(ch => ch.position.sub(offset));
+}
+
+const loader = new GLTFLoader();
+const templates = new Map();
+const failed = window.failedModels = [];
+function loadTemplate(path) {
+  if (!templates.has(path)) {
+    // Retry flaky connections, and give up on a model after 20 s so one bad file never blocks the city
+    const attempt = n => Promise.race([
+      loader.loadAsync('./models/' + path),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000))
+    ]).catch(err => n > 0 ? attempt(n - 1) : Promise.reject(err));
+    templates.set(path, attempt(2).then(g => { prepareModel(g.scene); return g.scene; }).catch(() => { failed.push(path); return null; }));
+  }
+  return templates.get(path);
+}
+
+const city = new THREE.Group();
+scene.add(city);
+const bar = document.getElementById('bar');
+const status = document.getElementById('status');
+
+function place(obj, item) {
+  const def = item.modelPath && item.modelPath.startsWith('nha/') ? 4.5 : 3.5;
+  const n = (v, fallback) => Number(v) || fallback;
+  obj.position.set(n(item.x, 0), n(item.y, 0), n(item.z, 0));
+  obj.rotation.set(n(item.rotationX, 0), n(item.rotationY, 0), n(item.rotationZ, 0));
+  obj.scale.set(n(item.scaleX ?? item.scale, def), n(item.scaleY ?? item.scale, def), n(item.scaleZ ?? item.scale, def));
+}
+
+async function build() {
+  let data;
+  for (let i = 0; ; i++) {
+    try { data = await fetch('./aquapolis.json').then(r => r.json()); break; }
+    catch (err) { if (i >= 3) throw err; await new Promise(r => setTimeout(r, 800)); }
+  }
+  const items = data.objects || data;
+  const leaves = [];
+  (function collect(list) { for (const it of list) it.isGroup ? collect(it.items) : leaves.push(it); })(items);
+  const paths = [...new Set(leaves.map(it => it.modelPath))];
+
+  let done = 0;
+  await Promise.all(paths.map(p => loadTemplate(p).then(() => {
+    done++;
+    bar.style.width = (done / paths.length * 100) + '%';
+    status.textContent = `ĐANG TẢI MÔ HÌNH ${done} / ${paths.length}`;
+  })));
+
+  async function add(list, parent) {
+    for (const it of list) {
+      if (it.isGroup) {
+        const g = new THREE.Group();
+        place(g, it);
+        g.userData.details = it.details;
+        parent.add(g);
+        await add(it.items, g);
+        continue;
+      }
+      const tpl = await loadTemplate(it.modelPath);
+      if (!tpl) continue;
+      const m = tpl.clone(true);
+      place(m, it);
+      m.userData.details = it.details;
+      parent.add(m);
+    }
+  }
+  await add(items, city);
+  status.textContent = 'THÀNH PHỐ ĐÃ SẴN SÀNG';
+  setTimeout(() => document.getElementById('loader').classList.add('done'), 300);
+}
+
+// Tap or click a structure to show its details
+const card = document.getElementById('card');
+const ray = new THREE.Raycaster();
+const ptr = new THREE.Vector2();
+let down = null;
+renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
+  ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObject(city, true)[0];
+  let o = hit && hit.object;
+  while (o && !(o.userData.details && o.userData.details.name)) o = o.parent;
+  if (!o) { card.classList.remove('show'); return; }
+  const d = o.userData.details;
+  document.getElementById('c-name').textContent = d.name;
+  document.getElementById('c-purpose').textContent = d.purpose || '—';
+  document.getElementById('c-feature').textContent = d.feature || '—';
+  card.classList.add('show');
+});
+document.getElementById('close').onclick = () => card.classList.remove('show');
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const t = clock.getElapsedTime();
+  for (let i = 0; i < ripple.count; i++) {
+    const x = rippleBase[i * 3], y = rippleBase[i * 3 + 1];
+    ripple.setZ(i, Math.sin(x * 0.08 + t) * 0.25 + Math.cos(y * 0.1 + t * 0.8) * 0.25);
+  }
+  ripple.needsUpdate = true;
+  for (let i = 0; i < bubbleCount; i++) {
+    let y = bubblePos[i * 3 + 1] + 0.03;
+    bubblePos[i * 3 + 1] = y > 25.8 ? 0 : y;
+  }
+  bubbleGeo.attributes.position.needsUpdate = true;
+  coreLight.intensity = 52 + Math.sin(t * 2) * 12;
+  controls.update();
+  renderer.render(scene, camera);
+});
+
+build().catch(err => { status.textContent = 'KHÔNG TẢI ĐƯỢC THÀNH PHỐ'; console.error(err); });
+</script>
+</body>
+</html>
