@@ -231,7 +231,7 @@ function place(obj, item) {
 async function build() {
   let data;
   for (let i = 0; ; i++) {
-    try { data = await fetch('./aquapolis.json').then(r => r.json()); break; }
+    try { data = await fetch('./aquapolis.json', { cache: 'no-cache' }).then(r => r.json()); break; }
     catch (err) { if (i >= 3) throw err; await new Promise(r => setTimeout(r, 800)); }
   }
   const items = data.objects || data;
